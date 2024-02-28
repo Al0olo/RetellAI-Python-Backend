@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.websockets import WebSocketState
 # from llm import LlmClient
 from llm_with_func_calling import LlmClient
-from twilio_server import TwilioClient
+# from twilio_server import TwilioClient
 from retellclient.models import operations
 from twilio.twiml.voice_response import VoiceResponse
 import asyncio
@@ -16,36 +16,36 @@ load_dotenv()
 app = FastAPI()
 
 llm_client = LlmClient()
-twilio_client = TwilioClient()
+# twilio_client = TwilioClient()
 
 # twilio_client.create_phone_number(213, os.environ['RETELL_AGENT_ID'])
 # twilio_client.delete_phone_number("+12133548310")
 # twilio_client.register_phone_agent("+14154750418", os.environ['RETELL_AGENT_ID'])
 # twilio_client.create_phone_call("+14154750418", "+13123156212", os.environ['RETELL_AGENT_ID'])
 
-@app.post("/twilio-voice-webhook/{agent_id_path}")
-async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
-    try:
-        # Check if it is machine
-        post_data = await request.form()
-        if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
-            twilio_client.end_call(post_data['CallSid'])
-            return PlainTextResponse("")
+# @app.post("/twilio-voice-webhook/{agent_id_path}")
+# async def handle_twilio_voice_webhook(request: Request, agent_id_path: str):
+#     try:
+#         # Check if it is machine
+#         post_data = await request.form()
+#         if 'AnsweredBy' in post_data and post_data['AnsweredBy'] == "machine_start":
+#             twilio_client.end_call(post_data['CallSid'])
+#             return PlainTextResponse("")
 
-        call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
-            agent_id=agent_id_path, 
-            audio_websocket_protocol="twilio", 
-            audio_encoding="mulaw", 
-            sample_rate=8000
-        ))
-        if call_response.call_detail:
-            response = VoiceResponse()
-            start = response.connect()
-            start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_detail.call_id}")
-            return PlainTextResponse(str(response), media_type='text/xml')
-    except Exception as err:
-        print(f"Error in twilio voice webhook: {err}")
-        return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+#         call_response = twilio_client.retell.register_call(operations.RegisterCallRequestBody(
+#             agent_id=agent_id_path, 
+#             audio_websocket_protocol="twilio", 
+#             audio_encoding="mulaw", 
+#             sample_rate=8000
+#         ))
+#         if call_response.call_detail:
+#             response = VoiceResponse()
+#             start = response.connect()
+#             start.stream(url=f"wss://api.retellai.com/audio-websocket/{call_response.call_detail.call_id}")
+#             return PlainTextResponse(str(response), media_type='text/xml')
+#     except Exception as err:
+#         print(f"Error in twilio voice webhook: {err}")
+#         return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
 
 @app.websocket("/llm-websocket/{call_id}")
 async def websocket_handler(websocket: WebSocket, call_id: str):
